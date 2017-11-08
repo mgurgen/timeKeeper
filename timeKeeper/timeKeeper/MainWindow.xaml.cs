@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,11 @@ namespace timeKeeper
         public MainWindow()
         {
             InitializeComponent();
+
+            ObservableCollection<Task> taskList = new ObservableCollection<Task>();
+
+            taskList.Add(new Task("Task 1", 8));
+            taskList.Add(new Task("Task 2", 4));
         }
     }
 }
