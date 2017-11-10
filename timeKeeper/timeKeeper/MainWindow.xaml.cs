@@ -25,6 +25,8 @@ namespace timeKeeper
         {
             InitializeComponent();
 
+            TfsConnection tfsConnection = new TfsConnection();
+
             ObservableCollection<Task> taskList = new ObservableCollection<Task>();
 
             taskList.Add(new Task("Task 1", 8));
