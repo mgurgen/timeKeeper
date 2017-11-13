@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using System.Collections.ObjectModel;
 
@@ -16,67 +14,41 @@ namespace timeKeeper
 {
     class TfsConnection
     {
-        // Connect to Team Foundation Server
-        //     Server is the name of the server that is running the application tier for Team Foundation.
-        //     Port is the port that Team Foundation uses. The default port is 8080.
-        //     VDir is the virtual path to the Team Foundation application. The default path is tfs.
+        private Dictionary<string, List<string>> _projectTeamDictionary;
+        public Dictionary<string, List<string>> ProjectTeamDictionary
+        {
+            get
+            {
+                return _projectTeamDictionary;
+            }
+        }
 
-        /*
-        static string tfsServerUri = "https://venus.tfs.siemens.net/tfs/tia/TIA/";
-
-        static Uri tfsUri = (tfsServerUri.Length < 1) ?
-            new Uri("http://Server:Port/VDir") : new Uri(tfsServerUri);
-
-        static TfsConfigurationServer configurationServer =
-            TfsConfigurationServerFactory.GetConfigurationServer(tfsUri);
-
-        ReadOnlyCollection<CatalogNode> collectionNodes = configurationServer.CatalogNode.QueryChildren(
-                new[] { CatalogResourceTypes.ProjectCollection },
-                false, CatalogQueryOptions.None);
-        */
         public TfsConnection()
         {
-            Credentials credentials = new Credentials();
+            _projectTeamDictionary = new Dictionary<string, List<string>>();
             
-
-            TfsTeamProjectCollection tpc = new TfsTeamProjectCollection(new Uri("https://venus.tfs.siemens.net/tfs/tia"), credentials);
+            TfsTeamProjectCollection tpc = new TfsTeamProjectCollection(new Uri("https://venus.tfs.siemens.net/tfs/tia"), new Credentials());
             tpc.EnsureAuthenticated();
 
             ICommonStructureService4 css = tpc.GetService<ICommonStructureService4>();
+
             var projectFromName = css.GetProjectFromName("TIA");
 
             TfsTeamService tts = tpc.GetService<TfsTeamService>();
 
             IEnumerable<TeamFoundationTeam> list = tts.QueryTeams(projectFromName.Uri);
-            
-            ReadOnlyCollection<CatalogNode> collectionNodes = tpc.ConfigurationServer.CatalogNode.QueryChildren(
-                new[] { CatalogResourceTypes.ProjectCollection },
-                false, CatalogQueryOptions.None);
 
-
-            // List the team project collections
-            foreach (CatalogNode collectionNode in collectionNodes)
+            foreach (TeamFoundationTeam item in list)
             {
-                // Use the InstanceId property to get the team project collection
-                //Guid collectionId = new Guid(collectionNode.Resource.Properties["InstanceId"]);
-                //TfsTeamProjectCollection teamProjectCollection = tpc.ConfigurationServer.GetTeamProjectCollection(collectionId);
+                Console.WriteLine(" Team: " + item.Name);
 
-                // Print the name of the team project collection
-                //Console.WriteLine("Collection: " + teamProjectCollection.Name);
+                List<TeamFoundationIdentity> members = item.GetMembers(tpc, MembershipQuery.Expanded).ToList();
 
-                // Get a catalog of team projects for the collection
-                ReadOnlyCollection<CatalogNode> projectNodes = collectionNode.QueryChildren(
-                    new[] { CatalogResourceTypes.TeamProject },
-                    false, CatalogQueryOptions.None);
-
-                // List the team projects in the collection
-                foreach (CatalogNode projectNode in projectNodes)
+                if (members.Exists(x => x.TeamFoundationId.Equals(tpc.AuthorizedIdentity.TeamFoundationId)))
                 {
-                    Console.WriteLine(" Team Project: " + projectNode.Resource.DisplayName);
+                    _projectTeamDictionary.Add(projectFromName.Name, new List<string> { item.Name });
                 }
             }
-
-
         }
     }
 }

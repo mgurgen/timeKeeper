@@ -17,6 +17,6 @@ namespace timeKeeper
 {
     class Credentials : Microsoft.VisualStudio.Services.Client.VssClientCredentials
     {
-        Microsoft.VisualStudio.Services.Common.WindowsCredential vCRed = new Microsoft.VisualStudio.Services.Common.WindowsCredential();
+
     }
 }
