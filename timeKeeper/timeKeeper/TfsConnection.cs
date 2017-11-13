@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using System.Collections.ObjectModel;
-
 using Microsoft.TeamFoundation.Client;
 using Microsoft.TeamFoundation.Common;
 using Microsoft.TeamFoundation.Framework.Common;
 using Microsoft.TeamFoundation.Framework.Client;
 using Microsoft.TeamFoundation.Server;
+using Microsoft.TeamFoundation;
 
 namespace timeKeeper
 {
@@ -26,28 +25,48 @@ namespace timeKeeper
         public TfsConnection()
         {
             _projectTeamDictionary = new Dictionary<string, List<string>>();
-            
-            TfsTeamProjectCollection tpc = new TfsTeamProjectCollection(new Uri("https://venus.tfs.siemens.net/tfs/tia"), new Credentials());
-            tpc.EnsureAuthenticated();
 
-            ICommonStructureService4 css = tpc.GetService<ICommonStructureService4>();
-
-            var projectFromName = css.GetProjectFromName("TIA");
-
-            TfsTeamService tts = tpc.GetService<TfsTeamService>();
-
-            IEnumerable<TeamFoundationTeam> list = tts.QueryTeams(projectFromName.Uri);
-
-            foreach (TeamFoundationTeam item in list)
+            try
             {
-                Console.WriteLine(" Team: " + item.Name);
+                TfsTeamProjectCollection tpc = new TfsTeamProjectCollection(new Uri(Settings.TfsConnectionUri), new Credentials());
+                tpc.EnsureAuthenticated();
 
-                List<TeamFoundationIdentity> members = item.GetMembers(tpc, MembershipQuery.Expanded).ToList();
+                ICommonStructureService4 css = tpc.GetService<ICommonStructureService4>();
 
-                if (members.Exists(x => x.TeamFoundationId.Equals(tpc.AuthorizedIdentity.TeamFoundationId)))
+                List<ProjectInfo> projectList = new List<ProjectInfo>();
+                if (Settings.ProjectNames.IsNullOrEmpty())
                 {
-                    _projectTeamDictionary.Add(projectFromName.Name, new List<string> { item.Name });
+                    projectList = css.ListAllProjects().ToList();
                 }
+                else
+                {
+                    string[] projectNames = Settings.ProjectNames.Split(',');
+                    foreach (string projectName in projectNames)
+                    {
+                        projectList.Add(css.GetProjectFromName(projectName));
+                    }
+                }
+
+                foreach (ProjectInfo projectInfo in projectList)
+                {
+                    TfsTeamService tts = tpc.GetService<TfsTeamService>();
+                    IEnumerable<TeamFoundationTeam> list = tts.QueryTeams(projectInfo.Uri);
+
+                    foreach (TeamFoundationTeam item in list)
+                    {
+                        Console.WriteLine(" Team: " + item.Name);
+
+                        List<TeamFoundationIdentity> members = item.GetMembers(tpc, MembershipQuery.Expanded).ToList();
+                        if (members.Exists(x => x.TeamFoundationId.Equals(tpc.AuthorizedIdentity.TeamFoundationId)))
+                        {
+                            _projectTeamDictionary.Add(projectInfo.Name, new List<string> { item.Name });
+                        }
+                    }
+                }
+            }
+            catch (TeamFoundationServiceUnavailableException tfsUnavailableException)
+            {
+                throw new TeamFoundationServiceUnavailableException(tfsUnavailableException.Message);
             }
         }
     }
