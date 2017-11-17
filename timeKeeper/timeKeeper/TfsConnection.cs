@@ -7,7 +7,6 @@ using Microsoft.TeamFoundation.Common;
 using Microsoft.TeamFoundation.Framework.Common;
 using Microsoft.TeamFoundation.Framework.Client;
 using Microsoft.TeamFoundation.Server;
-using Microsoft.TeamFoundation;
 
 namespace timeKeeper
 {
@@ -50,23 +49,38 @@ namespace timeKeeper
                 foreach (ProjectInfo projectInfo in projectList)
                 {
                     TfsTeamService tts = tpc.GetService<TfsTeamService>();
-                    IEnumerable<TeamFoundationTeam> list = tts.QueryTeams(projectInfo.Uri);
+                    IEnumerable<TeamFoundationTeam> teamList = new List<TeamFoundationTeam>();
 
-                    foreach (TeamFoundationTeam item in list)
+                    teamList = tts.QueryTeams(projectInfo.Uri);
+
+                    if (Settings.TeamNames.IsNullOrEmpty())
                     {
-                        Console.WriteLine(" Team: " + item.Name);
-
-                        List<TeamFoundationIdentity> members = item.GetMembers(tpc, MembershipQuery.Expanded).ToList();
-                        if (members.Exists(x => x.TeamFoundationId.Equals(tpc.AuthorizedIdentity.TeamFoundationId)))
+                        
+                        foreach (TeamFoundationTeam team in teamList)
                         {
-                            _projectTeamDictionary.Add(projectInfo.Name, new List<string> { item.Name });
+                            Console.WriteLine(" Team: " + team.Name);
+
+                            List<TeamFoundationIdentity> members = team.GetMembers(tpc, MembershipQuery.Expanded).ToList();
+                            if (members.Exists(x => x.TeamFoundationId.Equals(tpc.AuthorizedIdentity.TeamFoundationId)))
+                            {
+                                _projectTeamDictionary.Add(projectInfo.Name, new List<string> { team.Name });
+                            }
+                        }
+                    }
+                    else
+                    {
+                        string[] teamNames = Settings.TeamNames.Split(',');
+                        foreach (string teamName in teamNames)
+                        {
+                            teamList.Select(x => x.Name.Equals(teamName));
+                            _projectTeamDictionary.Add(projectInfo.Name, new List<string> { teamList.First().Name });
                         }
                     }
                 }
             }
-            catch (TeamFoundationServiceUnavailableException tfsUnavailableException)
+            catch (Microsoft.TeamFoundation.TeamFoundationServiceUnavailableException tfsUnavailableException)
             {
-                throw new TeamFoundationServiceUnavailableException(tfsUnavailableException.Message);
+                throw new Microsoft.TeamFoundation.TeamFoundationServiceUnavailableException(tfsUnavailableException.Message);
             }
         }
     }
