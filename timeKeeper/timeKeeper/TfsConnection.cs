@@ -12,8 +12,8 @@ namespace timeKeeper
 {
     class TfsConnection
     {
-        private Dictionary<string, List<string>> _projectTeamDictionary;
-        public Dictionary<string, List<string>> ProjectTeamDictionary
+        private Dictionary<ProjectInfo, List<TeamFoundationTeam>> _projectTeamDictionary;
+        public Dictionary<ProjectInfo, List<TeamFoundationTeam>> ProjectTeamDictionary
         {
             get
             {
@@ -23,7 +23,7 @@ namespace timeKeeper
 
         public TfsConnection()
         {
-            _projectTeamDictionary = new Dictionary<string, List<string>>();
+            _projectTeamDictionary = new Dictionary<ProjectInfo, List<TeamFoundationTeam>>();
 
             try
             {
@@ -32,38 +32,41 @@ namespace timeKeeper
 
                 ICommonStructureService4 css = tpc.GetService<ICommonStructureService4>();
 
-                List<ProjectInfo> projectList = new List<ProjectInfo>();
+                //List<ProjectInfo> projectList = new List<ProjectInfo>();
                 if (Settings.ProjectNames.IsNullOrEmpty())
                 {
-                    projectList = css.ListAllProjects().ToList();
+                    _projectTeamDictionary 
+                        = css.ListAllProjects()
+                        .GroupBy(projectInfo => projectInfo)
+                        .ToDictionary(projectInfo => projectInfo.Key, projectInfo => new List<TeamFoundationTeam>());
                 }
                 else
                 {
                     string[] projectNames = Settings.ProjectNames.Split(',');
                     foreach (string projectName in projectNames)
                     {
-                        projectList.Add(css.GetProjectFromName(projectName));
+                        if (!_projectTeamDictionary.ContainsKey(css.GetProjectFromName(projectName)))
+                            _projectTeamDictionary.Add(css.GetProjectFromName(projectName), new List<TeamFoundationTeam>());
                     }
                 }
 
-                foreach (ProjectInfo projectInfo in projectList)
+                foreach (ProjectInfo projectInfo in _projectTeamDictionary.Keys)
                 {
                     TfsTeamService tts = tpc.GetService<TfsTeamService>();
-                    IEnumerable<TeamFoundationTeam> teamList = new List<TeamFoundationTeam>();
+                    List<TeamFoundationTeam> teamList = new List<TeamFoundationTeam>();
 
-                    teamList = tts.QueryTeams(projectInfo.Uri);
+                    teamList = tts.QueryTeams(projectInfo.Uri).ToList();
 
                     if (Settings.TeamNames.IsNullOrEmpty())
                     {
-                        
                         foreach (TeamFoundationTeam team in teamList)
                         {
                             Console.WriteLine(" Team: " + team.Name);
 
                             List<TeamFoundationIdentity> members = team.GetMembers(tpc, MembershipQuery.Expanded).ToList();
-                            if (members.Exists(x => x.TeamFoundationId.Equals(tpc.AuthorizedIdentity.TeamFoundationId)))
+                            if (members.Exists(member => member.TeamFoundationId.Equals(tpc.AuthorizedIdentity.TeamFoundationId)))
                             {
-                                _projectTeamDictionary.Add(projectInfo.Name, new List<string> { team.Name });
+                                _projectTeamDictionary[projectInfo].Add(team);
                             }
                         }
                     }
@@ -72,8 +75,7 @@ namespace timeKeeper
                         string[] teamNames = Settings.TeamNames.Split(',');
                         foreach (string teamName in teamNames)
                         {
-                            teamList.Select(x => x.Name.Equals(teamName));
-                            _projectTeamDictionary.Add(projectInfo.Name, new List<string> { teamList.First().Name });
+                            _projectTeamDictionary[projectInfo].AddRange(teamList.FindAll(x => x.Name.Equals(teamName)));
                         }
                     }
                 }
