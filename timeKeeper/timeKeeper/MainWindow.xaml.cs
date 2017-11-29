@@ -26,6 +26,7 @@ namespace timeKeeper
             InitializeComponent();
 
             TfsConnection tfsConnection = new TfsConnection();
+            teamList.ItemsSource = tfsConnection.ProjectTeamDictionary.Keys.ToList();
 
             ObservableCollection<Task> taskList = new ObservableCollection<Task>();
 

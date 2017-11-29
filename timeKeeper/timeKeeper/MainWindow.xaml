@@ -8,8 +8,9 @@
         Title="MainWindow" Height="350" Width="525">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="20"/>
             <RowDefinition Height="9*"/>
         </Grid.RowDefinitions>
+        <ListView Margin="10" Grid.Row="1" Name="teamList"/>
     </Grid>
 </Window>

@@ -32,7 +32,6 @@ namespace timeKeeper
 
                 ICommonStructureService4 css = tpc.GetService<ICommonStructureService4>();
 
-                //List<ProjectInfo> projectList = new List<ProjectInfo>();
                 if (Settings.ProjectNames.IsNullOrEmpty())
                 {
                     _projectTeamDictionary 
