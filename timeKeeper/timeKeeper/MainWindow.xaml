@@ -8,9 +8,28 @@
         Title="MainWindow" Height="350" Width="525">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="20"/>
+            <RowDefinition Height="40"/>
             <RowDefinition Height="9*"/>
         </Grid.RowDefinitions>
-        <ListView Margin="10" Grid.Row="1" Name="teamList"/>
+        <Border Grid.Row="0" Background="#116bf7">
+            <Button Name="SetingsButton" Width="38" Height="38" HorizontalAlignment="Right">
+                <Button.Background>
+                    <ImageBrush ImageSource="Resources/icons8-settings-50.png"/>
+                </Button.Background>
+            </Button>
+        </Border>
+        <ListView Margin="0" Grid.Row="1" Name="teamList">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <WrapPanel>
+                        <TextBlock Text="Name: " />
+                        <TextBlock Text="{Binding TaskName}" FontWeight="Bold" />
+                        <TextBlock Text=", " />
+                        <TextBlock Text="Age: " />
+                        <TextBlock Text="{Binding OriginalEstimation}" FontWeight="Bold" />
+                    </WrapPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
     </Grid>
 </Window>

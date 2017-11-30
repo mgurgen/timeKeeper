@@ -25,13 +25,15 @@ namespace timeKeeper
         {
             InitializeComponent();
 
-            TfsConnection tfsConnection = new TfsConnection();
-            teamList.ItemsSource = tfsConnection.ProjectTeamDictionary.Keys.ToList();
+            //TfsConnection tfsConnection = new TfsConnection();
+            //teamList.ItemsSource = tfsConnection.ProjectTeamDictionary.Keys.ToList();
 
             ObservableCollection<Task> taskList = new ObservableCollection<Task>();
 
             taskList.Add(new Task("Task 1", 8));
             taskList.Add(new Task("Task 2", 4));
+
+            teamList.ItemsSource = taskList;
         }
     }
 }
